@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  <title>PRIXE — Cosmetics Price Index</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Montserrat:wght@200;300;400;500&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --black: #0a0a0a;
+      --white: #f5f4f0;
+      --grey-1: #1a1a1a;
+      --grey-2: #2c2c2c;
+      --grey-3: #555;
+      --grey-4: #888;
+      --grey-5: #c8c5be;
+      --accent: #e8e4dc;
+      --gold: #c9b882;
+      --serif: 'Cormorant Garamond', serif;
+      --sans: 'Montserrat', sans-serif;
+      --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--black);
+      color: var(--white);
+      font-family: var(--sans);
+      font-weight: 300;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ─── NOISE TEXTURE OVERLAY ─── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ─── LAYOUT ─── */
+    .app { position: relative; z-index: 1; max-width: 780px; margin: 0 auto; padding: 0 24px 80px; }
+
+    /* ─── HEADER ─── */
+    header {
+      padding: 52px 0 40px;
+      border-bottom: 1px solid var(--grey-2);
+      margin-bottom: 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .brand-eyebrow {
+      font-family: var(--sans);
+      font-size: 9px;
+      font-weight: 500;
+      letter-spacing: 0.3em;
+      color: var(--gold);
+      text-transform: uppercase;
+    }
+
+    .brand-title {
+      font-family: var(--serif);
+      font-size: clamp(42px, 8vw, 68px);
+      font-weight: 300;
+      letter-spacing: 0.08em;
+      line-height: 1;
+      color: var(--white);
+    }
+
+    .brand-subtitle {
+      font-family: var(--sans);
+      font-size: 10px;
+      font-weight: 200;
+      letter-spacing: 0.22em;
+      color: var(--grey-4);
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    .header-actions {
+      margin-top: 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    /* ─── SETTINGS GEAR BUTTON ─── */
+    .settings-btn {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 160;
+      width: 36px;
+      height: 36px;
+      background: var(--grey-1);
+      border: 1px solid var(--grey-2);
+      color: var(--grey-4);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      transition: border-color var(--transition), color var(--transition);
+    }
+    .settings-btn:hover { border-color: var(--grey-5); color: var(--white); }
+
+    /* ─── SETTINGS PANEL ─── */
+    .settings-panel {
+      position: fixed;
+      top: 64px;
+      right: 20px;
+      z-index: 155;
+      width: 290px;
+      background: var(--grey-1);
+      border: 1px solid var(--grey-2);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      opacity: 0;
+      transform: translateY(-6px);
+      pointer-events: none;
+      transition: opacity var(--transition), transform var(--transition);
+    }
+    .settings-panel.open { opacity: 1; transform: translateY(0); pointer-events: all; }
+
+    .settings-title {
+      font-size: 9px;
+      font-weight: 500;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--grey-4);
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--grey-2);
+    }
+
+    .settings-field { display: flex; flex-direction: column; gap: 7px; }
+    .settings-field label {
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--grey-4);
+    }
+    .settings-field input {
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid var(--grey-3);
+      color: var(--white);
+      font-family: var(--sans);
+      font-size: 11px;
+      font-weight: 300;
+      padding: 6px 0;
+      outline: none;
+      width: 100%;
+      transition: border-color var(--transition);
+    }
+    .settings-field input:focus { border-bottom-color: var(--gold); }
+    .settings-field input::placeholder { color: var(--grey-3); }
+
+    .settings-actions { display: flex; gap: 8px; }
+    .settings-actions button {
+      flex: 1;
+      background: transparent;
+      border: 1px solid var(--grey-2);
+      color: var(--grey-4);
+      font-family: var(--sans);
+      font-size: 9px;
+      font-weight: 400;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      padding: 10px 8px;
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+    .settings-actions button:hover { border-color: var(--grey-5); color: var(--white); }
+    .settings-actions button.primary { background: var(--white); color: var(--black); border-color: var(--white); }
+    .settings-actions button.primary:hover { background: var(--gold); border-color: var(--gold); color: var(--black); }
+
+    .sync-status {
+      font-size: 9px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      text-align: center;
+      min-height: 14px;
+    }
+    .sync-status.ok { color: var(--gold); }
+    .sync-status.err { color: #c0392b; }
+    .sync-status.loading { color: var(--grey-4); animation: pulse 1.2s ease-in-out infinite; }
+
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+    /* ─── CONTROLS ─── */
+    .controls {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 32px;
+      flex-wrap: wrap;
+    }
+
+    .search-wrap {
+      flex: 1;
+      min-width: 200px;
+      position: relative;
+    }
+
+    .search-wrap input {
+      width: 100%;
+      background: transparent;
+      border: 1px solid var(--grey-2);
+      color: var(--white);
+      font-family: var(--sans);
+      font-size: 11px;
+      font-weight: 300;
+      letter-spacing: 0.08em;
+      padding: 12px 16px 12px 40px;
+      outline: none;
+      transition: border-color var(--transition);
+    }
+
+    .search-wrap input:focus { border-color: var(--grey-5); }
+    .search-wrap input::placeholder { color: var(--grey-3); letter-spacing: 0.15em; }
+
+    .search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--grey-3);
+      font-size: 13px;
+      pointer-events: none;
+    }
+
+    .sort-select {
+      background: transparent;
+      border: 1px solid var(--grey-2);
+      color: var(--grey-4);
+      font-family: var(--sans);
+      font-size: 9px;
+      font-weight: 400;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      padding: 12px 16px;
+      outline: none;
+      cursor: pointer;
+      transition: border-color var(--transition), color var(--transition);
+      -webkit-appearance: none;
+    }
+
+    .sort-select:focus, .sort-select:hover { border-color: var(--grey-5); color: var(--white); }
+    .sort-select option { background: var(--grey-1); }
+
+    /* ─── ADD BUTTON ─── */
+    .btn-add {
+      background: var(--white);
+      color: var(--black);
+      border: none;
+      font-family: var(--sans);
+      font-size: 9px;
+      font-weight: 500;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      padding: 12px 24px;
+      cursor: pointer;
+      transition: background var(--transition), color var(--transition);
+      white-space: nowrap;
+    }
+
+    .btn-add:hover { background: var(--gold); }
+
+    /* ─── MODAL ─── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity var(--transition);
+      backdrop-filter: blur(4px);
+    }
+
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+
+    .modal {
+      background: var(--grey-1);
+      border: 1px solid var(--grey-2);
+      width: 100%;
+      max-width: 500px;
+      padding: 40px;
+      transform: translateY(20px);
+      transition: transform var(--transition);
+    }
+
+    .modal-overlay.open .modal { transform: translateY(0); }
+
+    .modal-title {
+      font-family: var(--serif);
+      font-size: 28px;
+      font-weight: 300;
+      letter-spacing: 0.05em;
+      margin-bottom: 32px;
+      color: var(--white);
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 24px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .field label {
+      font-size: 9px;
+      font-weight: 500;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--grey-4);
+    }
+
+    .field input, .field select, .field textarea {
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid var(--grey-2);
+      color: var(--white);
+      font-family: var(--sans);
+      font-size: 13px;
+      font-weight: 300;
+      padding: 8px 0;
+      outline: none;
+      transition: border-color var(--transition);
+      width: 100%;
+    }
+
+    .field input:focus, .field select:focus, .field textarea:focus {
+      border-bottom-color: var(--gold);
+    }
+
+    .field input::placeholder, .field textarea::placeholder { color: var(--grey-3); }
+    .field select option { background: var(--grey-1); }
+    .field textarea { resize: vertical; min-height: 60px; }
+
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 32px;
+    }
+
+    .btn-save {
+      background: var(--white);
+      color: var(--black);
+      border: none;
+      font-family: var(--sans);
+      font-size: 9px;
+      font-weight: 500;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      padding: 14px 32px;
+      cursor: pointer;
+      transition: background var(--transition);
+      flex: 1;
+    }
+
+    .btn-save:hover { background: var(--gold); }
+
+    .btn-cancel {
+      background: transparent;
+      color: var(--grey-4);
+      border: 1px solid var(--grey-2);
+      font-family: var(--sans);
+      font-size: 9px;
+      font-weight: 400;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      padding: 14px 24px;
+      cursor: pointer;
+      transition: border-color var(--transition), color var(--transition);
+    }
+
+    .btn-cancel:hover { border-color: var(--grey-4); color: var(--white); }
+
+    /* ─── STATS STRIP ─── */
+    .stats-strip {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      border: 1px solid var(--grey-2);
+      margin-bottom: 32px;
+    }
+
+    .stat-block {
+      padding: 20px;
+      border-right: 1px solid var(--grey-2);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .stat-block:last-child { border-right: none; }
+
+    .stat-label {
+      font-size: 8px;
+      font-weight: 500;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--grey-4);
+    }
+
+    .stat-value {
+      font-family: var(--serif);
+      font-size: 26px;
+      font-weight: 300;
+      color: var(--white);
+      line-height: 1;
+    }
+
+    .stat-value span {
+      font-family: var(--sans);
+      font-size: 11px;
+      font-weight: 200;
+      color: var(--grey-4);
+    }
+
+    /* ─── PRODUCT LIST ─── */
+    .section-label {
+      font-size: 9px;
+      font-weight: 500;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--grey-3);
+      margin-bottom: 16px;
+    }
+
+    .product-list { display: flex; flex-direction: column; gap: 1px; }
+
+    .product-card {
+      background: var(--grey-1);
+      border-left: 2px solid transparent;
+      padding: 20px 24px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: start;
+      gap: 16px;
+      cursor: pointer;
+      transition: border-color var(--transition), background var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .product-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, rgba(201,184,130,0.04) 0%, transparent 60%);
+      opacity: 0;
+      transition: opacity var(--transition);
+    }
+
+    .product-card:hover { border-left-color: var(--gold); background: var(--grey-2); }
+    .product-card:hover::before { opacity: 1; }
+
+    .product-main { display: flex; flex-direction: column; gap: 6px; }
+
+    .product-name {
+      font-family: var(--serif);
+      font-size: 18px;
+      font-weight: 400;
+      letter-spacing: 0.03em;
+      color: var(--white);
+      line-height: 1.2;
+    }
+
+    .product-meta {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .product-source {
+      font-size: 9px;
+      font-weight: 400;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--grey-4);
+    }
+
+    .product-category {
+      font-size: 9px;
+      font-weight: 400;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--grey-3);
+      border: 1px solid var(--grey-2);
+      padding: 2px 8px;
+    }
+
+    .product-date {
+      font-size: 9px;
+      letter-spacing: 0.1em;
+      color: var(--grey-3);
+    }
+
+    .product-notes-preview {
+      font-size: 11px;
+      font-weight: 200;
+      color: var(--grey-4);
+      font-style: italic;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      max-width: 340px;
+    }
+
+    .product-price-block {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+      min-width: 80px;
+    }
+
+    .product-unit-price {
+      font-family: var(--serif);
+      font-size: 22px;
+      font-weight: 300;
+      color: var(--white);
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .product-unit-price .currency {
+      font-family: var(--sans);
+      font-size: 13px;
+      font-weight: 200;
+    }
+
+    .product-unit-label {
+      font-size: 9px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--grey-4);
+    }
+
+    .product-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+      opacity: 0;
+      transition: opacity var(--transition);
+    }
+
+    .product-card:hover .product-actions { opacity: 1; }
+
+    .btn-icon {
+      background: transparent;
+      border: 1px solid var(--grey-2);
+      color: var(--grey-4);
+      font-size: 10px;
+      padding: 4px 10px;
+      cursor: pointer;
+      font-family: var(--sans);
+      font-weight: 400;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      transition: all var(--transition);
+    }
+
+    .btn-icon:hover { border-color: var(--grey-5); color: var(--white); }
+    .btn-icon.delete:hover { border-color: #c0392b; color: #c0392b; }
+
+    /* ─── EMPTY STATE ─── */
+    .empty-state {
+      text-align: center;
+      padding: 80px 24px;
+      border: 1px dashed var(--grey-2);
+    }
+
+    .empty-glyph {
+      font-family: var(--serif);
+      font-size: 64px;
+      font-weight: 300;
+      color: var(--grey-2);
+      line-height: 1;
+      margin-bottom: 16px;
+    }
+
+    .empty-title {
+      font-family: var(--serif);
+      font-size: 22px;
+      font-weight: 300;
+      color: var(--grey-3);
+      margin-bottom: 8px;
+      letter-spacing: 0.05em;
+    }
+
+    .empty-sub {
+      font-size: 10px;
+      font-weight: 200;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--grey-3);
+    }
+
+    /* ─── TOAST ─── */
+    .toast {
+      position: fixed;
+      bottom: 32px;
+      right: 32px;
+      background: var(--grey-1);
+      border: 1px solid var(--grey-2);
+      border-left: 3px solid var(--gold);
+      color: var(--white);
+      font-family: var(--sans);
+      font-size: 10px;
+      font-weight: 300;
+      letter-spacing: 0.1em;
+      padding: 14px 20px;
+      z-index: 200;
+      transform: translateY(20px);
+      opacity: 0;
+      transition: all 0.3s ease;
+      pointer-events: none;
+      max-width: 280px;
+    }
+
+    .toast.show { transform: translateY(0); opacity: 1; }
+
+    /* ─── DIVIDER ─── */
+    .ornamental-divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 32px 0;
+    }
+
+    .ornamental-divider::before,
+    .ornamental-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--grey-2);
+    }
+
+    .ornamental-divider span {
+      font-family: var(--serif);
+      font-size: 16px;
+      color: var(--grey-3);
+      font-weight: 300;
+    }
+
+    /* ─── SCROLLBAR ─── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: var(--black); }
+    ::-webkit-scrollbar-thumb { background: var(--grey-2); }
+    ::-webkit-scrollbar-thumb:hover { background: var(--grey-3); }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 520px) {
+      .field-row { grid-template-columns: 1fr; }
+      .stats-strip { grid-template-columns: 1fr; }
+      .stat-block { border-right: none; border-bottom: 1px solid var(--grey-2); }
+      .stat-block:last-child { border-bottom: none; }
+      .modal { padding: 28px 24px; }
+      .product-card { grid-template-columns: 1fr; }
+      .product-price-block { align-items: flex-start; }
+    }
+
+    /* ─── ENTER ANIMATION ─── */
+    .product-card {
+      animation: slideIn 0.3s ease both;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- HEADER -->
+  <header>
+    <div class="brand-eyebrow">Personal Index</div>
+    <div class="brand-title">PRIXE</div>
+    <div class="brand-subtitle">Cosmetics Unit Price Registry</div>
+    <div class="header-actions">
+      <button class="btn-add" onclick="openModal()">+ Add Entry</button>
+    </div>
+  </header>
+
+  <!-- STATS -->
+  <div class="stats-strip" id="stats-strip">
+    <div class="stat-block">
+      <div class="stat-label">Total Entries</div>
+      <div class="stat-value" id="stat-count">0</div>
+    </div>
+    <div class="stat-block">
+      <div class="stat-label">Highest Price</div>
+      <div class="stat-value" id="stat-max">—</div>
+    </div>
+    <div class="stat-block">
+      <div class="stat-label">Avg Unit Price</div>
+      <div class="stat-value" id="stat-avg">—</div>
+    </div>
+  </div>
+
+  <!-- CONTROLS -->
+  <div class="controls">
+    <div class="search-wrap">
+      <span class="search-icon">⌕</span>
+      <input type="text" id="search-input" placeholder="Search products, sources…" oninput="renderList()" />
+    </div>
+    <select class="sort-select" id="sort-select" onchange="renderList()">
+      <option value="date-desc">Latest First</option>
+      <option value="date-asc">Oldest First</option>
+      <option value="price-desc">Price ↓</option>
+      <option value="price-asc">Price ↑</option>
+      <option value="name-asc">Name A–Z</option>
+    </select>
+  </div>
+
+  <!-- LIST -->
+  <div class="section-label" id="list-label">All Entries</div>
+  <div class="product-list" id="product-list"></div>
+
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="handleOverlayClick(event)">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">New Entry</div>
+    <div class="form-grid">
+
+      <div class="field">
+        <label>Product Name</label>
+        <input type="text" id="f-name" placeholder="e.g. HR Black Bandage Cream" />
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label>Unit Price (£/ml)</label>
+          <input type="number" id="f-price" placeholder="0.00" step="0.01" min="0" />
+        </div>
+        <div class="field">
+          <label>Volume (ml)</label>
+          <input type="number" id="f-volume" placeholder="optional" step="0.1" min="0" />
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label>Currency</label>
+          <select id="f-currency">
+            <option value="£">£ GBP</option>
+            <option value="€">€ EUR</option>
+            <option value="$">$ USD</option>
+            <option value="¥">¥ JPY</option>
+            <option value="NT$">NT$ TWD</option>
+            <option value="HK$">HK$ HKD</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Category</label>
+          <select id="f-category">
+            <option value="Skincare">Skincare</option>
+            <option value="Serum">Serum</option>
+            <option value="Moisturiser">Moisturiser</option>
+            <option value="Eye Care">Eye Care</option>
+            <option value="Toner">Toner</option>
+            <option value="Essence">Essence</option>
+            <option value="Oil">Oil / Facial Oil</option>
+            <option value="Sunscreen">Sunscreen</option>
+            <option value="Makeup">Makeup</option>
+            <option value="Fragrance">Fragrance</option>
+            <option value="Body">Body Care</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Purchased From</label>
+        <input type="text" id="f-source" placeholder="e.g. Official Site, Selfridges, SpaceNK" />
+      </div>
+
+      <div class="field">
+        <label>Notes</label>
+        <textarea id="f-notes" placeholder="Texture, longevity, repurchase intention…"></textarea>
+      </div>
+
+    </div>
+    <div class="modal-actions">
+      <button class="btn-save" onclick="saveEntry()">Save Entry</button>
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS GEAR -->
+<button class="settings-btn" onclick="toggleSettings()" title="Settings">⚙</button>
+
+<!-- SETTINGS PANEL -->
+<div class="settings-panel" id="settings-panel">
+  <div class="settings-title">Settings</div>
+  <div class="settings-field">
+    <label>GitHub Token</label>
+    <input type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxx" oninput="saveConfig()" />
+  </div>
+  <div class="settings-field">
+    <label>Storage ID</label>
+    <input type="text" id="gh-gist" placeholder="leave blank to create new" oninput="saveConfig()" />
+  </div>
+  <div class="settings-actions">
+    <button onclick="syncFromGist()">↓ Load</button>
+    <button class="primary" onclick="syncToGist()">↑ Save</button>
+  </div>
+  <div class="sync-status" id="sync-status"></div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+  // ─── STATE ───────────────────────────────────────────────
+  let products = [];
+  let editingId = null;
+  const STORAGE_KEY = 'prixe_products';
+  const CONFIG_KEY  = 'prixe_config';
+
+  // ─── INIT ─────────────────────────────────────────────────
+  window.addEventListener('DOMContentLoaded', () => {
+    loadConfig();
+    loadLocal();
+    renderList();
+    updateStats();
+  });
+
+  function loadLocal() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) products = JSON.parse(raw);
+    } catch(e) {}
+  }
+
+  function saveLocal() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
+  }
+
+  function loadConfig() {
+    try {
+      const c = JSON.parse(localStorage.getItem(CONFIG_KEY) || '{}');
+      if (c.token) document.getElementById('gh-token').value = c.token;
+      if (c.gist)  document.getElementById('gh-gist').value  = c.gist;
+    } catch(e) {}
+  }
+
+  function saveConfig() {
+    const token = document.getElementById('gh-token').value.trim();
+    const gist  = document.getElementById('gh-gist').value.trim();
+    localStorage.setItem(CONFIG_KEY, JSON.stringify({ token, gist }));
+  }
+
+  function getConfig() {
+    return JSON.parse(localStorage.getItem(CONFIG_KEY) || '{}');
+  }
+
+  // ─── GIST SYNC ────────────────────────────────────────────
+  async function syncToGist() {
+    const { token, gist } = getConfig();
+    if (!token) { showToast('Please enter your GitHub token.'); return; }
+
+    setStatus('loading', 'Saving…');
+    const body = {
+      description: 'PRIXE Cosmetics Price Index',
+      public: false,
+      files: {
+        'prixe-data.json': { content: JSON.stringify(products, null, 2) }
+      }
+    };
+
+    try {
+      let res, data;
+      if (gist) {
+        res = await fetch(`https://api.github.com/gists/${gist}`, {
+          method: 'PATCH',
+          headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+      } else {
+        res = await fetch('https://api.github.com/gists', {
+          method: 'POST',
+          headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+      }
+
+      data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Error');
+
+      // Save new gist ID
+      document.getElementById('gh-gist').value = data.id;
+      saveConfig();
+      setStatus('ok', 'Saved ✓');
+      showToast('Saved ✅');
+    } catch(e) {
+      setStatus('err', 'Error');
+      showToast('Sync failed: ' + e.message);
+    }
+  }
+
+  async function syncFromGist() {
+    const { token, gist } = getConfig();
+    if (!token || !gist) { showToast('Enter your GitHub token and Gist ID.'); return; }
+
+    setStatus('loading', 'Loading…');
+    try {
+      const res = await fetch(`https://api.github.com/gists/${gist}`, {
+        headers: { Authorization: `token ${token}` }
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Error');
+
+      const content = data.files['prixe-data.json']?.content;
+      if (!content) throw new Error('No data found in Gist');
+
+      products = JSON.parse(content);
+      saveLocal();
+      renderList();
+      updateStats();
+      setStatus('ok', 'Loaded ✓');
+      showToast(`Loaded ${products.length} entries`);
+    } catch(e) {
+      setStatus('err', 'Error');
+      showToast('Load failed: ' + e.message);
+    }
+  }
+
+  function setStatus(type, text) {
+    const el = document.getElementById('sync-status');
+    el.className = 'sync-status ' + type;
+    el.textContent = text;
+  }
+
+  // ─── MODAL ────────────────────────────────────────────────
+  function openModal(id = null) {
+    editingId = id;
+    const modal = document.getElementById('modal-overlay');
+    document.getElementById('modal-title').textContent = id ? 'Edit Entry' : 'New Entry';
+
+    if (id) {
+      const p = products.find(x => x.id === id);
+      if (p) {
+        document.getElementById('f-name').value     = p.name     || '';
+        document.getElementById('f-price').value    = p.price    || '';
+        document.getElementById('f-volume').value   = p.volume   || '';
+        document.getElementById('f-currency').value = p.currency || '£';
+        document.getElementById('f-category').value = p.category || 'Skincare';
+        document.getElementById('f-source').value   = p.source   || '';
+        document.getElementById('f-notes').value    = p.notes    || '';
+      }
+    } else {
+      document.getElementById('f-name').value     = '';
+      document.getElementById('f-price').value    = '';
+      document.getElementById('f-volume').value   = '';
+      document.getElementById('f-currency').value = '£';
+      document.getElementById('f-category').value = 'Skincare';
+      document.getElementById('f-source').value   = '';
+      document.getElementById('f-notes').value    = '';
+    }
+
+    modal.classList.add('open');
+    setTimeout(() => document.getElementById('f-name').focus(), 300);
+  }
+
+  function closeModal() {
+    document.getElementById('modal-overlay').classList.remove('open');
+    editingId = null;
+  }
+
+  function handleOverlayClick(e) {
+    if (e.target === document.getElementById('modal-overlay')) closeModal();
+  }
+
+  // ─── CRUD ─────────────────────────────────────────────────
+  function saveEntry() {
+    const name     = document.getElementById('f-name').value.trim();
+    const price    = parseFloat(document.getElementById('f-price').value);
+    const volume   = parseFloat(document.getElementById('f-volume').value) || null;
+    const currency = document.getElementById('f-currency').value;
+    const category = document.getElementById('f-category').value;
+    const source   = document.getElementById('f-source').value.trim();
+    const notes    = document.getElementById('f-notes').value.trim();
+
+    if (!name || isNaN(price) || price < 0) {
+      showToast('Please enter a product name and valid unit price.');
+      return;
+    }
+
+    if (editingId) {
+      const idx = products.findIndex(x => x.id === editingId);
+      if (idx > -1) {
+        products[idx] = { ...products[idx], name, price, volume, currency, category, source, notes, updatedAt: new Date().toISOString() };
+        showToast('Entry updated');
+      }
+    } else {
+      products.unshift({
+        id: Date.now().toString(),
+        name, price, volume, currency, category, source, notes,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+      showToast('Entry added');
+    }
+
+    saveLocal();
+    renderList();
+    updateStats();
+    closeModal();
+  }
+
+  function deleteEntry(id) {
+    if (!confirm('Remove this entry?')) return;
+    products = products.filter(x => x.id !== id);
+    saveLocal();
+    renderList();
+    updateStats();
+    showToast('Entry removed');
+  }
+
+  // ─── RENDER ───────────────────────────────────────────────
+  function renderList() {
+    const query = document.getElementById('search-input').value.toLowerCase();
+    const sort  = document.getElementById('sort-select').value;
+    const label = document.getElementById('list-label');
+
+    let list = products.filter(p =>
+      p.name.toLowerCase().includes(query) ||
+      (p.source || '').toLowerCase().includes(query) ||
+      (p.category || '').toLowerCase().includes(query) ||
+      (p.notes || '').toLowerCase().includes(query)
+    );
+
+    list.sort((a, b) => {
+      if (sort === 'date-desc') return new Date(b.createdAt) - new Date(a.createdAt);
+      if (sort === 'date-asc')  return new Date(a.createdAt) - new Date(b.createdAt);
+      if (sort === 'price-desc') return b.price - a.price;
+      if (sort === 'price-asc')  return a.price - b.price;
+      if (sort === 'name-asc')   return a.name.localeCompare(b.name);
+      return 0;
+    });
+
+    label.textContent = query ? `Results for "${query}"` : `All Entries`;
+
+    const container = document.getElementById('product-list');
+
+    if (list.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-glyph">◇</div>
+          <div class="empty-title">${query ? 'No matches found' : 'Your registry is empty'}</div>
+          <div class="empty-sub">${query ? 'Try a different search term' : 'Add your first entry above'}</div>
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = list.map((p, i) => {
+      const date = new Date(p.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+      const unit = p.currency || '£';
+      return `
+        <div class="product-card" style="animation-delay:${i * 0.04}s">
+          <div class="product-main">
+            <div class="product-name">${escHtml(p.name)}</div>
+            <div class="product-meta">
+              ${p.source ? `<div class="product-source">${escHtml(p.source)}</div>` : ''}
+              ${p.category ? `<div class="product-category">${escHtml(p.category)}</div>` : ''}
+              <div class="product-date">${date}</div>
+            </div>
+            ${p.notes ? `<div class="product-notes-preview">${escHtml(p.notes)}</div>` : ''}
+            <div class="product-actions">
+              <button class="btn-icon" onclick="openModal('${p.id}')">Edit</button>
+              <button class="btn-icon delete" onclick="deleteEntry('${p.id}')">Remove</button>
+            </div>
+          </div>
+          <div class="product-price-block">
+            <div class="product-unit-price"><span class="currency">${unit}</span>${p.price.toFixed(2)}</div>
+            <div class="product-unit-label">per ml${p.volume ? ` · ${p.volume}ml` : ''}</div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function updateStats() {
+    const count = products.length;
+    document.getElementById('stat-count').textContent = count;
+
+    if (count === 0) {
+      document.getElementById('stat-max').textContent = '—';
+      document.getElementById('stat-avg').textContent = '—';
+      return;
+    }
+
+    const prices = products.map(p => p.price).filter(Boolean);
+    const max = Math.max(...prices);
+    const avg = prices.reduce((a, b) => a + b, 0) / prices.length;
+    const cur = products[0]?.currency || '£';
+
+    document.getElementById('stat-max').innerHTML = `${cur}${max.toFixed(2)} <span>/ ml</span>`;
+    document.getElementById('stat-avg').innerHTML = `${cur}${avg.toFixed(2)} <span>/ ml</span>`;
+  }
+
+  // ─── UTILS ────────────────────────────────────────────────
+  function escHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  let toastTimer;
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  // ─── KEYBOARD ─────────────────────────────────────────────
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { closeModal(); closeSettings(); }
+    if (e.key === 'Enter' && document.getElementById('modal-overlay').classList.contains('open')) {
+      if (document.activeElement.tagName !== 'TEXTAREA') saveEntry();
+    }
+  });
+
+  // ─── SETTINGS ─────────────────────────────────────────────
+  function toggleSettings() {
+    document.getElementById('settings-panel').classList.toggle('open');
+  }
+  function closeSettings() {
+    document.getElementById('settings-panel').classList.remove('open');
+  }
+  document.addEventListener('click', e => {
+    const panel = document.getElementById('settings-panel');
+    const btn   = document.querySelector('.settings-btn');
+    if (panel.classList.contains('open') && !panel.contains(e.target) && !btn.contains(e.target)) {
+      closeSettings();
+    }
+  });
+</script>
+</body>
+</html>
